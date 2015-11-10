@@ -1,29 +1,13 @@
-# jenkins-job-generator
+package jenkins
 
-Experimental Jenkins job generator written in Go.
+import (
+	"bytes"
+	"encoding/xml"
+	"testing"
+)
 
-## Installation
-
-	go get github.com/suzuken/jenkins-job-generator
-
-## Usage
-
-prepare shell file.
-
-```sh
-#!/bin/bash
-echo "Hello world!";
-```
-
-run,
-
-```
-$ jenkins-job-generator -file examples/echo.sh -project hello
-```
-
-and then job file (config.xml) is generated.
-
-```xml
+func TestEchoJob(t *testing.T) {
+	job := `<?xml version="1.0" encoding="UTF-8"?>
 <project>
   <actions></actions>
   <description>hello</description>
@@ -38,18 +22,21 @@ and then job file (config.xml) is generated.
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>#!/bin/bash&#xA;echo &#34;Hello world!&#34;;&#xA;</command>
+      <command>echo &#34;Hello World!&#34;</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers></publishers>
   <buildWrappers></buildWrappers>
-</project>
-```
-
-## LICENSE
-
-MIT
-
-## Author
-
-Kenta Suzuki (a.k.a. suzuken)
+</project>`
+	j := NewProject("hello", "echo \"Hello World!\"")
+	var buf bytes.Buffer
+	buf.Write([]byte(xml.Header))
+	enc := xml.NewEncoder(&buf)
+	enc.Indent("", "  ")
+	if err := enc.Encode(j); err != nil {
+		t.Fatalf("encoding job failed: err %s", err)
+	}
+	if buf.String() != job {
+		t.Fatalf("job is not equals, \nexpected\n%s\nactual\n%s\n", job, buf.String())
+	}
+}
